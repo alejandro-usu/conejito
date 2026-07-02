@@ -332,7 +332,7 @@
 
     <div class="modal-overlay" id="nameModal" style="display: none;">
         <div class="modal-content">
-            <h2>Welcome Bunny!</h2>
+            <h2>Hey there Hopper!</h2>
             <p>Enter your nickname for the leaderboard:</p>
             <input type="text" id="nameInput" class="modal-input" placeholder="e.g. Bugs Bunny" maxlength="20" autocomplete="off">
             <button id="nameSubmitBtn" class="modal-btn">Let's Go!</button>
@@ -457,7 +457,7 @@
         let horseBuffer = null;
         let secretHorseBuffer = null; 
 
-        fetch('conejito.mp3')
+        fetch('conejito3.mp3')
             .then(response => response.arrayBuffer())
             .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
             .then(decodedAudio => horseBuffer = decodedAudio)
