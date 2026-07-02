@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐇</text></svg>" />
+    <meta name="theme-color" content="#ffffff">
+    <title>Conejito Clicker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+            padding-top: 40px;
+            gap: 30px; 
+        }
+
+        /* --- NEW MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 350px;
+            animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-content h2 { margin-bottom: 10px; font-size: 1.5rem; color: #111; }
+        .modal-content p { margin-bottom: 20px; color: #666; font-size: 0.95rem; }
+        .modal-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .modal-input:focus { border-color: #888; }
+        .modal-btn {
+            background: #111;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .modal-btn:hover { background: #333; }
+        .modal-btn:active { transform: scale(0.98); }
+        
+        /* UI Elements */
+        .stats-container {
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .global-counter {
+            font-size: 4.5rem; 
+            font-weight: 900;
+            margin-bottom: 5px;
+            color: #111;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            line-height: 1;
+        }
+        
+        .personal-counter {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .reset-button {
+            background: transparent;
+            border: none;
+            color: #d9534f;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .reset-button:hover {
+            opacity: 1;
+            color: #c9302c;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .button-3d {
+            width: 200px;
+            height: 200px;
+            background: #ffffff;
+            border: 4px solid #f9f9f9; 
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s;
+        }
+        .button-3d:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+        }
+        .button-3d:active {
+            transform: translateY(4px) scale(0.98); 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+        .emoji { user-select: none; }
+        
+        .animated-horse {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            user-select: none;
+        }
+        @keyframes horsePop {
+            0% { opacity: 0; transform: translateY(100px) scale(0.5); }
+            20% { opacity: 1; transform: translateY(0) scale(1.2); }
+            40% { transform: translateY(-20px) translateX(10px) scale(1); }
+            60% { transform: translateY(-10px) translateX(-15px) scale(1.1); }
+            80% { transform: translateY(-30px) translateX(20px) scale(0.9); }
+            100% { opacity: 0; transform: translateY(-50px) translateX(0) scale(0.5); }
+        }
+        .animated-horse.show { animation: horsePop 2s ease-out forwards; }
+
+        .leaderboard {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            width: 90%;
+            max-width: 300px;
+            z-index: 10;
+            margin-bottom: 40px;
+        }
+        .leaderboard h3 {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .leaderboard-subtitle {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .leaderboard ol {
+            padding-left: 20px;
+            font-weight: bold;
+        }
+        .leaderboard li {
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+
+        /* AUTH BUTTON */
+        .auth-button {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+            z-index: 100;
+            max-width: 240px;
+            text-align: center;
+            font-family: inherit;
+        }
+        .auth-button:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        }
+        .auth-button:active { transform: translateY(-50%) scale(0.98); }
+
+        .auth-button.signed-in {
+            background: #f0f9f0;
+            border-color: #c8e6c8;
+            color: #2d6a2d;
+        }
+
+        @media (max-width: 768px) {
+            body { padding-bottom: 80px; }
+            .auth-button {
+                top: auto;
+                right: auto;
+                left: 50%;
+                bottom: 20px;
+                transform: translateX(-50%);
+            }
+            .auth-button:hover { transform: translateX(-50%) scale(1.05); }
+            .auth-button:active { transform: translateX(-50%) scale(0.98); }
+        }
+
+        /* THE RUNNING HORSE BOUNDARY */
+        .running-horse-boundary {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none; /* Make sure it doesn't block clicks */
+            z-index: 999; /* Float above everything except animated horses */
+            overflow: hidden;
+        }
+
+        .running-horse {
+            position: absolute;
+            /* Changed font-size to width for the image */
+            width: 200px; 
+            opacity: 0.9;
+            user-select: none;
+            /* Ensure the image can't be dragged by accident */
+            pointer-events: none; 
+            animation: gallopBorder 15s linear infinite;
+        }
+
+        /* GALLOP ANIMATION ALONG THE BORDER (Smooth Corners & Pure Rotation) */
+        @keyframes gallopBorder {
+            /* TOP EDGE: Run Right */
+            0%   { top: 25px; left: 25px; transform: translate(-50%, -50%) rotate(180deg); }
+            23%  { top: 25px; left: calc(100% - 25px); transform: translate(-50%, -50%) rotate(180deg); }
+            
+            /* CORNER: Smooth Pivot Down */
+            25%  { top: 25px; left: calc(100% - 25px); transform: translate(-50%, -50%) rotate(270deg); }
+            
+            /* RIGHT EDGE: Run Down */
+            48%  { top: calc(100% - 25px); left: calc(100% - 25px); transform: translate(-50%, -50%) rotate(270deg); }
+            
+            /* CORNER: Smooth Pivot Left */
+            50%  { top: calc(100% - 25px); left: calc(100% - 25px); transform: translate(-50%, -50%) rotate(360deg); }
+            
+            /* BOTTOM EDGE: Run Left */
+            73%  { top: calc(100% - 25px); left: 25px; transform: translate(-50%, -50%) rotate(360deg); }
+            
+            /* CORNER: Smooth Pivot Up */
+            75%  { top: calc(100% - 25px); left: 25px; transform: translate(-50%, -50%) rotate(450deg); }
+            
+            /* LEFT EDGE: Run Up */
+            98%  { top: 25px; left: 25px; transform: translate(-50%, -50%) rotate(450deg); }
+            
+            /* CORNER: Smooth Pivot Right (Completes the 360 loop) */
+            100% { top: 25px; left: 25px; transform: translate(-50%, -50%) rotate(540deg); }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; color: white; }
+            .global-counter { color: #fff; }
+            .personal-counter { color: #aaa; }
+            .leaderboard-subtitle { color: #777; border-bottom-color: #333; }
+            .button-3d { 
+                background: #2d2d2d; 
+                border-color: #333;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4), inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+            }
+            .button-3d:hover { box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), inset 0 -3px 0 rgba(0, 0, 0, 0.2); }
+            .leaderboard { background: rgba(45, 45, 45, 0.9); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+            .reset-button { color: #ff6b6b; }
+            .reset-button:hover { color: #ff4c4c; }
+            
+            /* Dark Mode Modal */
+            .modal-content { background: #2d2d2d; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+            .modal-content h2 { color: white; }
+            .modal-content p { color: #bbb; }
+            .modal-input { background: #1a1a1a; color: white; border-color: #444; }
+            .modal-input:focus { border-color: #777; }
+            .modal-btn { background: #f0f0f0; color: #111; }
+            .modal-btn:hover { background: #ccc; }
+            .running-horse { opacity: 0.7; }
+
+            /* Dark Mode Auth Button */
+            .auth-button {
+                background: #2d2d2d;
+                border-color: #444;
+                color: #ddd;
+            }
+            .auth-button.signed-in {
+                background: #1d3a1d;
+                border-color: #2d5a2d;
+                color: #a8d8a8;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="modal-overlay" id="nameModal" style="display: none;">
+        <div class="modal-content">
+            <h2>Welcome Bunny!</h2>
+            <p>Enter your nickname for the leaderboard:</p>
+            <input type="text" id="nameInput" class="modal-input" placeholder="e.g. Bugs Bunny" maxlength="20" autocomplete="off">
+            <button id="nameSubmitBtn" class="modal-btn">Let's Go!</button>
+        </div>
+    </div>
+
+    <button class="auth-button" id="authButton">
+        <span id="authButtonText">Add a nickname to the leaderboard</span>
+    </button>
+
+    <div class="stats-container">
+        <div class="global-counter" id="globalCountDisplay">0</div>
+        <div class="personal-counter" id="personalCounter">My Clicks: 0</div>
+        <button id="resetLocalBtn" class="reset-button">Reset My Clicks</button>
+    </div>
+    <!-- commenting out spinning horse for uhhhh PROFESSIONALISM
+    <div class="running-horse-boundary">
+        <img src="horse-fat.gif" class="running-horse" alt="Fat Horse">
+    </div>
+    -->
+    <div class="button-container">
+        <button class="button-3d" id="emojiButton">
+            <span class="emoji">🐇</span>
+        </button>
+    </div>
+
+    <div class="leaderboard">
+        <h3>Top Conejitos</h3>
+        <div class="leaderboard-subtitle">Keep clicking to climb the ranks!</div>
+        <ol id="leaderboard-list">
+            <li>Loading...</li>
+        </ol>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // --- 1. FIREBASE SETUP ---
+        // 🔽 Replace this ENTIRE object with the config copied straight from the
+        //    Firebase Console (Project settings → your web app snippet). Don't hand-type it.
+        //    Double-check databaseURL is present — it's often missing from the snippet
+        //    if the Realtime Database was created after you registered the web app.
+        const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "conejito-clicker.firebaseapp.com",
+  databaseURL: "https://conejito-clicker-default-rtdb.firebaseio.com",
+  projectId: "conejito-clicker",
+  storageBucket: "conejito-clicker.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+        firebase.initializeApp(firebaseConfig);
+
+        const database = firebase.database();
+        const globalRef = database.ref('globalClicks');
+        const usersRef = database.ref('users');
+
+        // --- 2. IDENTITY SETUP (UPDATED FOR MODAL) ---
+        let myName = localStorage.getItem('conejitoNickname');
+        const nameModal = document.getElementById('nameModal');
+        const nameInput = document.getElementById('nameInput');
+        const nameSubmitBtn = document.getElementById('nameSubmitBtn');
+
+        function saveAndStart(rawName) {
+            const trimmed = rawName.trim();
+            if (!trimmed) {
+                // Empty input = stay anonymous, just close the modal
+                nameModal.style.display = 'none';
+                return;
+            }
+            // Sanitize illegal Firebase characters
+            const cleanName = trimmed.replace(/[.#$\[\]]/g, "-");
+            localStorage.setItem('conejitoNickname', cleanName);
+            myName = cleanName;
+            nameModal.style.display = 'none';
+            updateAuthButtonDisplay();
+        }
+
+        // Always wire up the modal handlers — modal opens on demand via the auth button
+        nameSubmitBtn.addEventListener('click', () => {
+            saveAndStart(nameInput.value);
+        });
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveAndStart(nameInput.value);
+            }
+        });
+
+        // --- AUTH BUTTON ---
+        const authButton = document.getElementById('authButton');
+        const authButtonText = document.getElementById('authButtonText');
+
+        function updateAuthButtonDisplay() {
+            if (myName) {
+                authButtonText.textContent = `Playing as: ${myName}`;
+                authButton.classList.add('signed-in');
+            } else {
+                authButtonText.textContent = 'Add a nickname to the leaderboard';
+                authButton.classList.remove('signed-in');
+            }
+        }
+
+        authButton.addEventListener('click', () => {
+            // Pre-fill with current name so users can edit, or empty for first-timers
+            nameInput.value = myName || '';
+            nameModal.style.display = 'flex';
+            setTimeout(() => nameInput.focus(), 50);
+        });
+
+        // Initialize button state on load
+        updateAuthButtonDisplay();
+
+        // --- 3. UI ELEMENTS & LOCAL VARS ---
+        const button = document.getElementById('emojiButton');
+        const personalCounter = document.getElementById('personalCounter');
+        let personalClickCount = 0;
+        
+        // --- 4. WEB AUDIO API SETUP ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        if ('audioSession' in navigator) {
+            navigator.audioSession.type = 'playback';
+        }
+        
+        let horseBuffer = null;
+        let secretHorseBuffer = null; 
+
+        fetch('conejito.mp3')
+            .then(response => response.arrayBuffer())
+            .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+            .then(decodedAudio => horseBuffer = decodedAudio)
+            .catch(e => console.error("Error loading normal audio:", e));
+
+        fetch('conejito-secret.mp3') 
+            .then(response => response.arrayBuffer())
+            .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+            .then(decodedAudio => secretHorseBuffer = decodedAudio)
+            .catch(e => console.error("Error loading secret audio:", e));
+
+        // --- 5. FUNCTIONS ---
+        function loadPersonalClickCount() {
+            const saved = localStorage.getItem('conejitoClickCount');
+            personalClickCount = saved ? parseInt(saved, 10) : 0;
+            updatePersonalCounterDisplay();
+        }
+
+        function savePersonalClickCount() {
+            localStorage.setItem('conejitoClickCount', personalClickCount.toString());
+        }
+
+        function updatePersonalCounterDisplay() {
+            const formatter = new Intl.NumberFormat('en-US');
+            personalCounter.textContent = `My Clicks: ${formatter.format(personalClickCount)}`;
+        }
+
+        function createAnimatedHorse() {
+            const horse = document.createElement('div');
+            horse.className = 'animated-horse';
+            horse.textContent = '🐇';
+            
+            const x = Math.random() * (window.innerWidth - 100);
+            const y = Math.random() * (window.innerHeight * 0.6) + (window.innerHeight * 0.2);
+            
+            horse.style.left = x + 'px';
+            horse.style.top = y + 'px';
+            
+            document.body.appendChild(horse);
+            
+            setTimeout(() => horse.classList.add('show'), 10);
+            setTimeout(() => {
+                if (horse.parentNode) document.body.removeChild(horse);
+            }, 2000);
+        }
+
+        function playSound(playSecret = false) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const bufferToPlay = playSecret ? secretHorseBuffer : horseBuffer;
+            if (!bufferToPlay) return; 
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = bufferToPlay;
+            source.connect(audioCtx.destination);
+            source.start(0);
+        }
+
+        // --- 6. FIREBASE LISTENERS ---
+        globalRef.on('value', (snapshot) => {
+            const count = snapshot.val() || 0;
+            document.getElementById('globalCountDisplay').innerText = count.toLocaleString();
+        });
+
+        usersRef.orderByChild('score').limitToLast(5).on('value', (snapshot) => {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = ""; 
+            
+            const players = [];
+            snapshot.forEach((child) => {
+                players.push({ name: child.key, score: child.val().score });
+            });
+
+            players.reverse().forEach((player) => {
+                const li = document.createElement('li');
+                li.innerText = `${player.name}: ${player.score.toLocaleString()}`;
+                list.appendChild(li);
+            });
+        });
+
+        // --- 7. THE CLICK EVENT ---
+        button.addEventListener('click', (e) => {
+            personalClickCount++;
+
+            const isEasterEgg = (personalClickCount % 100 === 0);
+            playSound(isEasterEgg);
+            createAnimatedHorse();
+
+            updatePersonalCounterDisplay();
+            savePersonalClickCount();
+
+            // Only sync to Firebase if the user has set a name
+            if (myName) {
+                globalRef.transaction(c => (c || 0) + 1);
+
+                usersRef.child(myName).transaction((currentData) => {
+                    const data = currentData || { score: 0, lastClick: 0 };
+                    return {
+                        score: data.score + 1,
+                        lastClick: firebase.database.ServerValue.TIMESTAMP
+                    };
+                });
+            }
+        });
+
+        // --- 8. RESET LOCAL CLICKS ---
+        document.getElementById('resetLocalBtn').addEventListener('click', () => {
+            const confirmReset = confirm("Are you sure you want to reset your personal clicks to 0?");
+            if (confirmReset) {
+                personalClickCount = 0;
+                updatePersonalCounterDisplay();
+                localStorage.removeItem('conejitoClickCount');
+            }
+        });
+
+        window.addEventListener('load', () => {
+            loadPersonalClickCount();
+        });
+    </script>
+</body>
+</html>
