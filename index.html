@@ -463,7 +463,7 @@
             .then(decodedAudio => horseBuffer = decodedAudio)
             .catch(e => console.error("Error loading normal audio:", e));
 
-        fetch('conejito-secret.mp3') 
+        fetch('bunny.mp3') 
             .then(response => response.arrayBuffer())
             .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
             .then(decodedAudio => secretHorseBuffer = decodedAudio)
